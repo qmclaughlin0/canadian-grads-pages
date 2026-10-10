@@ -28,7 +28,7 @@ def restore(public):
         if code in linked:
             raise ValueError(f"Duplicate appendix card: {code}")
         linked.append(code)
-        href = "/" + pdf.relative_to(public).as_posix()
+        href = "/" + pdf.relative_to(public).as_posix() + "?v=" + sha256(pdf.read_bytes()).hexdigest()[:12]
         return (f'<a class="book-resource" href="{escape(href, quote=True)}" '
                 f'target="_blank" rel="noopener noreferrer" title="Open Appendix {code} PDF">'
                 + match["body"] + '</a>')
