@@ -17,7 +17,7 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image, KeepTogether
 
 NAVY = colors.HexColor('#211f40')
 DEEP = colors.HexColor('#16163f')
@@ -279,17 +279,28 @@ def general_tables(code, doc, width):
                     story.append(make_table([['Company','Source','Primary fields / targets']]+combined,[width*.24,width*.49,width*.27],urlcols=(1,),uris=urls,size=8.6,padding=4))
                     story.append(PageBreak())
             elif i in (4,5):
-                story.append(heading('Community Foundations' + (' (continued)' if i==5 else '')))
                 raw=p.extract_tables()[0]
-                _,u=extracted(p)
-                table=make_table(raw,[width/3]*3,size=8.8,padding=3,uris=u)
-                for ri,row in enumerate(raw[1:],1):
-                    for ci,value in enumerate(row):
-                        if clean(value).isupper():
-                            table._cellvalues[ri][ci]=para(value,ParagraphStyle('province',parent=STYLES['cell'],fontName='BodyBold',textColor=NAVY))
-                            table.setStyle(TableStyle([('BACKGROUND',(ci,ri),(ci,ri),colors.HexColor('#ede4cd'))]))
-                story.append(table)
-                story.append(PageBreak())
+                if i==4: foundations={}
+                # Each source column is its own regional list. Treat the all-caps
+                # province labels as section changes rather than fixed column headings.
+                for ci in range(3):
+                    region=None
+                    for row in raw:
+                        value=clean(row[ci])
+                        if value.isupper():
+                            region=value
+                            foundations.setdefault(region,[])
+                        elif value:
+                            if region is None: raise ValueError('Foundation missing regional heading')
+                            foundations[region].append(value)
+                if i==5:
+                    story.append(heading('Community Foundations'))
+                    for region,names in foundations.items():
+                        rows=[[region,'','']]
+                        rows += [names[j:j+3]+['']*(3-len(names[j:j+3])) for j in range(0,len(names),3)]
+                        story.append(make_table(rows,[width/3]*3,size=8.8,padding=4,spans=[((0,0),(2,0))]))
+                        story.append(Spacer(1,12))
+                    story.append(PageBreak())
             else:
                 story.append(heading('Sample of Public & Non-Profit Organizations with Scholarships'))
                 r,u=extracted(p)
@@ -410,7 +421,8 @@ def student_tax(doc,width):
                     footnotes=[row[0] for row in raw[1:] if not clean(row[0]).isdigit()]
                     raw=[raw[0]]+[row for row in raw[1:] if clean(row[0]).isdigit()]
                 widths=[width*.05,width*.26,width*.10,width*.15,width*.44] if pi==1 else [width*.12,width*.44,width*.18,width*.26]
-                story.append(make_table(raw,widths,size=8.3,padding=5))
+                table=make_table(raw,widths,size=8.3,padding=5)
+                story.append(KeepTogether(table) if pi==6 else table)
                 story.extend(para(note,'small') for note in footnotes)
                 story.append(Spacer(1,8))
                 table_inserted=True
@@ -430,7 +442,8 @@ def student_tax(doc,width):
         if tables and not table_inserted:
             raw=tables[0].extract()
             widths=[width*.05,width*.26,width*.10,width*.15,width*.44] if pi==1 else [width*.12,width*.44,width*.18,width*.26]
-            story.append(make_table(raw,widths,size=8.3,padding=5))
+            table=make_table(raw,widths,size=8.3,padding=5)
+            story.append(KeepTogether(table) if pi==6 else table)
         story.append(Spacer(1,5))
     return story
 
