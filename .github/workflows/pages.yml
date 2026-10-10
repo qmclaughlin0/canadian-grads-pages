@@ -8,6 +8,7 @@ on:
       - .github/workflows/pages.yml
       - .github/scripts/configure-domain.py
       - .github/scripts/optimize-site.py
+      - .github/scripts/restore-appendices.py
   workflow_dispatch:
 
 permissions:
@@ -31,6 +32,8 @@ jobs:
           test -f public/.nojekyll
       - name: Configure custom domain URLs
         run: python3 .github/scripts/configure-domain.py public
+      - name: Restore appendix PDF links
+        run: python3 .github/scripts/restore-appendices.py public
       - name: Set up Python for asset optimization
         uses: actions/setup-python@v7
         with:
