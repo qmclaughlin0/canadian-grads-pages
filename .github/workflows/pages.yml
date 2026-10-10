@@ -9,6 +9,7 @@ on:
       - .github/scripts/configure-domain.py
       - .github/scripts/optimize-site.py
       - .github/scripts/restore-appendices.py
+      - .github/scripts/style-appendices.py
   workflow_dispatch:
 
 permissions:
@@ -32,14 +33,19 @@ jobs:
           test -f public/.nojekyll
       - name: Configure custom domain URLs
         run: python3 .github/scripts/configure-domain.py public
-      - name: Restore appendix PDF links
-        run: python3 .github/scripts/restore-appendices.py public
       - name: Set up Python for asset optimization
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - name: Install image encoder
-        run: python -m pip install --disable-pip-version-check Pillow==12.3.0
+      - name: Install website asset tools
+        run: python -m pip install --disable-pip-version-check Pillow==12.3.0 reportlab==4.4.9 pdfplumber==0.11.9 pypdf==6.10.0
+      - name: Typeset professional appendix PDFs
+        run: |
+          python .github/scripts/style-appendices.py public/assets styled-appendices
+          cp styled-appendices/*.pdf public/assets/
+          test "$(find styled-appendices -maxdepth 1 -name '*.pdf' | wc -l)" -eq 12
+      - name: Restore appendix PDF links
+        run: python .github/scripts/restore-appendices.py public
       - name: Optimize public assets
         run: python .github/scripts/optimize-site.py public
       - name: Configure Pages
