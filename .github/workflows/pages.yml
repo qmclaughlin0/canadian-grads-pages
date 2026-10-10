@@ -12,6 +12,7 @@ on:
       - .github/scripts/style-appendices.py
       - .github/scripts/improve-site.py
       - .github/scripts/redesign-homepage.py
+      - .github/scripts/unify-site.py
   workflow_dispatch:
 
 permissions:
@@ -54,6 +55,8 @@ jobs:
         run: python .github/scripts/improve-site.py public
       - name: Build book-focused homepage
         run: python .github/scripts/redesign-homepage.py public
+      - name: Unify page design and optimize page assets
+        run: python .github/scripts/unify-site.py public
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload website
